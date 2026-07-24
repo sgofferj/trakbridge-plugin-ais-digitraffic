@@ -110,6 +110,7 @@ def load_json_db(file_path: Optional[str]) -> Any:
 
 # pylint: disable=too-many-instance-attributes
 
+
 class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
     """Digitraffic AIS integration"""
 
@@ -417,7 +418,9 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
     async def _mqtt_loop(self) -> None:
         """Background task for MQTT."""
         config = self.get_decrypted_config()
-        url_str = cast(str, config.get("mqtt_url", "wss://meri.digitraffic.fi:443/mqtt"))
+        url_str = cast(
+            str, config.get("mqtt_url", "wss://meri.digitraffic.fi:443/mqtt")
+        )
         parsed_url = urlparse(url_str)
         host = parsed_url.hostname
         if not host:
@@ -445,12 +448,15 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
                     f"Digitraffic: MQTT connection failed with result code {rc}"
                 )
 
-        def on_message(_client: mqtt.Client, _userdata: Any, msg: mqtt.MQTTMessage) -> None:
+        def on_message(
+            _client: mqtt.Client, _userdata: Any, msg: mqtt.MQTTMessage
+        ) -> None:
             try:
                 data = json.loads(msg.payload.decode())
                 self._process_mqtt_message(msg.topic, data)
             except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error(f"Digitraffic: Error processing MQTT message: {e}")
+
         self._mqtt_client = mqtt.Client(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,  # type: ignore[attr-defined]
             transport="websockets" if use_ws else "tcp",

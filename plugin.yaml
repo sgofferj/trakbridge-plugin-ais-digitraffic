@@ -1,0 +1,12 @@
+id: ais_digitraffic
+name: Digitraffic AIS Plugin
+version: "0.1.0"
+entry_point: plugin/digitraffic.py
+class_name: DigitrafficAISPlugin
+description: "AIS vessel tracking via Digitraffic MQTT"
+author: Stefan Gofferje
+plugin_type: gps
+tier: community
+min_trakbridge_version: "2.0.0"
+extra_files:
+  - aiscountries.json
