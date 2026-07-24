@@ -4,6 +4,7 @@ version: "0.1.0"
 entry_point: plugin/digitraffic.py
 class_name: DigitrafficAISPlugin
 description: "AIS vessel tracking via Digitraffic MQTT"
+icon: "fas fa-ship"
 author: Stefan Gofferje
 plugin_type: gps
 tier: community
