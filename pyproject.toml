@@ -10,7 +10,7 @@ packages = [{include = "plugin"}]
 python = ">=3.10,<4.0"
 paho-mqtt = ">=2.0.0"
 aiohttp = ">=3.13.4"
-trakbridge-plugin-sdk = ">=2.0.0"
+trakbridge-plugin-sdk = ">=1.1.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=26.3.1"
