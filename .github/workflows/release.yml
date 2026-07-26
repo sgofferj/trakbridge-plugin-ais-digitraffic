@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - 'release-**'
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -49,4 +51,3 @@ jobs:
             - Version ${{ steps.version.outputs.version }}
             - Upgraded to TrakBridge 2.0.x API
           files: dist/*.tar.gz
-          generate_release_notes: true
