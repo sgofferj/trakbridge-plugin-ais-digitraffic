@@ -31,3 +31,20 @@ jobs:
         with:
           name: plugin-package
           path: dist/
+      - name: Extract version from plugin.yaml
+        id: version
+        run: |
+          VERSION=$(python3 -c "import yaml; print(yaml.safe_load(open('plugin.yaml'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: |
+            ## Changes
+            - Version ${{ steps.version.outputs.version }}
+            - Upgraded to TrakBridge 2.0.x API
+          files: dist/*.tar.gz
+          generate_release_notes: true
