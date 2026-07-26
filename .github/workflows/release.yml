@@ -16,7 +16,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Poetry
-        run: pip install poetry pyyaml
+        run: pipx install poetry
+      - name: Install build tools
+        run: pip install pyyaml
       - name: Regenerate lock file
         run: poetry lock
       - name: Install dependencies
