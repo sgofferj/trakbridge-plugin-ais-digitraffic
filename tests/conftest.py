@@ -10,7 +10,11 @@ base_plugin = MagicMock()
 
 
 class BaseGPSPlugin:
-    pass
+    def __init__(self, config=None):
+        self._config = config or {}
+
+    def get_decrypted_config(self):
+        return self._config
 
 
 class CallsignMappable:

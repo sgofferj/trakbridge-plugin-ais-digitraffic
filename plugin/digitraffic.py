@@ -124,6 +124,8 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
         self._stop_mqtt = False
         self._countries_db: Optional[Dict[str, List[str]]] = None
         self._shadowfleet_db: Optional[List[Dict[str, Any]]] = None
+        self._class_map: Dict[str, str] = {}
+        self._class_map_mtime = 0.0
         self._metadata_cache: Dict[str, Dict[str, Any]] = {}
         self._last_cache_save = 0.0
 
@@ -216,6 +218,13 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
                     field_type="filepath",
                     required=False,
                     help_text="File containing shadowfleet vessel information.",
+                ),
+                PluginConfigField(
+                    name="class_map_path",
+                    label="Transponder Class Map Path",
+                    field_type="filepath",
+                    required=False,
+                    help_text="Optional path to the aisstream plugin's metadata cache to source #CLASSA/#CLASSB tags. Read-only, never written.",
                 ),
                 PluginConfigField(
                     name="metadata_cache_path",
@@ -385,6 +394,9 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
             remarks_parts.append(f"Last Pos: {entry['last_pos_time']}")
 
         tags = "#AIS"
+        transponder_class = self._class_map.get(mmsi)
+        if transponder_class in ("A", "B"):
+            tags += f" #CLASS{transponder_class}"
         if shadow_vessel:
             tags += " #shadowfleet"
         remarks_parts.append(tags)
@@ -393,6 +405,34 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
         entry["description"] = "\n".join(remarks_parts)
         entry["timestamp"] = datetime.now(timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
+
+    def _refresh_class_map(self) -> None:
+        """Reload the transponder class map (read-only, mtime-checked)."""
+        config = self.get_decrypted_config()
+        path = config.get("class_map_path")
+        if isinstance(path, str):
+            path = path.strip()
+        if not path:
+            return
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError as e:
+            logger.warning(f"Digitraffic: Cannot stat class map {path}: {e}")
+            return
+        if mtime == self._class_map_mtime:
+            return
+        data = load_json_db(path)
+        if data is None:
+            return
+        self._class_map = {
+            mmsi: entry["class"]
+            for mmsi, entry in data.items()
+            if isinstance(entry, dict) and entry.get("class") in ("A", "B")
+        }
+        self._class_map_mtime = mtime
+        logger.debug(
+            f"Digitraffic: Loaded {len(self._class_map)} transponder classes from {path}"
         )
 
     def _save_metadata_cache(self) -> None:
@@ -432,6 +472,7 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
 
         self._countries_db = load_json_db(config.get("countries_db_path"))
         self._shadowfleet_db = load_json_db(config.get("shadowfleet_db_path"))
+        self._refresh_class_map()
 
         def on_connect(
             _client: mqtt.Client,
@@ -479,6 +520,7 @@ class DigitrafficAISPlugin(BaseGPSPlugin):  # type: ignore[misc]
             while not self._stop_mqtt:
                 await asyncio.sleep(60)
                 self._save_metadata_cache()
+                self._refresh_class_map()
 
             self._mqtt_client.loop_stop()
             self._mqtt_client.disconnect()
